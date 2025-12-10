@@ -1,0 +1,37 @@
+[ {
+  "id" : 1,
+  "category" : "Food",
+  "amount" : 12.50,
+  "date" : "2025-12-07",
+  "note" : "Lunch"
+}, {
+  "id" : 3,
+  "category" : "Rent",
+  "amount" : 500.00,
+  "date" : "2025-11-29",
+  "note" : "Monthly rent"
+}, {
+  "id" : 4,
+  "category" : "Movies",
+  "amount" : 35,
+  "date" : "2025-12-03",
+  "note" : null
+}, {
+  "id" : 5,
+  "category" : "Food",
+  "amount" : 20,
+  "date" : "2025-10-07",
+  "note" : null
+}, {
+  "id" : 6,
+  "category" : "Travel",
+  "amount" : 300,
+  "date" : "2025-12-26",
+  "note" : null
+}, {
+  "id" : 7,
+  "category" : "Travel",
+  "amount" : 400,
+  "date" : "2025-12-04",
+  "note" : null
+} ]
