@@ -2,6 +2,7 @@ package com.saloni.expensetracker.repository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.saloni.expensetracker.model.Expense;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
@@ -15,14 +16,16 @@ import java.util.*;
 @Repository
 public class FileExpenseRepository implements ExpenseRepository {
 
-    private final Path filePath = Paths.get("expenses.json");
+    private final Path filePath;
     private final List<Expense> expenses = new ArrayList<>();
     private long nextId = 1;
 
     private final ObjectMapper objectMapper;
 
-    public FileExpenseRepository(ObjectMapper objectMapper) {
+    public FileExpenseRepository(ObjectMapper objectMapper, 
+                               @Value("${expense.file.path:expenses.json}") String expenseFilePath) {
         this.objectMapper = objectMapper;
+        this.filePath = Paths.get(expenseFilePath);
         loadFromFile();
     }
 
@@ -45,9 +48,9 @@ public class FileExpenseRepository implements ExpenseRepository {
             // OPTIONAL: preload demo data into the file the first time
             expenses.add(new Expense(0, "Food",
                     new BigDecimal("12.50"), LocalDate.now().minusDays(2), "Lunch"));
-            expenses.add(new Expense(0, "Transport",
+            expenses.add(new Expense(0, "Travel",
                     new BigDecimal("3.20"), LocalDate.now().minusDays(1), "Bus"));
-            expenses.add(new Expense(0, "Rent",
+            expenses.add(new Expense(0, "Utilities",
                     new BigDecimal("500.00"), LocalDate.now().minusDays(10), "Monthly rent"));
 
             for (Expense e : expenses) {
