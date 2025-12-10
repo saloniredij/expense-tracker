@@ -3,13 +3,15 @@ package com.saloni.expensetracker.controller;
 import com.saloni.expensetracker.dto.ExpenseSummary;
 import com.saloni.expensetracker.model.Expense;
 import com.saloni.expensetracker.service.ExpenseService;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/expenses")
-@CrossOrigin(origins = "http://localhost:5173")  // for React 
+// @CrossOrigin(origins = "http://localhost:5173")  // for React 
 public class ExpenseController {
 
     private final ExpenseService service;
@@ -22,6 +24,18 @@ public class ExpenseController {
     @PostMapping
     public Expense createExpense(@RequestBody Expense expense) {
         return service.addExpense(expense);
+    }
+
+    // Update an existing expense
+    @PutMapping("/{id}")
+    public Expense updateExpense(@PathVariable long id, @RequestBody Expense expense) {
+        try {
+            return service.updateExpense(id, expense);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update expense");
+        }
     }
 
     // List all expenses

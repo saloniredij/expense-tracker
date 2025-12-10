@@ -29,6 +29,31 @@ public class ExpenseService {
         return repository.save(expense);
     }
 
+    public Expense updateExpense(long id, Expense expense) {
+        // set id to ensure update
+        expense.setId(id);
+
+        // validation: date not in the future
+        if (expense.getDate() == null) {
+            expense.setDate(LocalDate.now());
+        }
+        if (expense.getDate().isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("Expense date cannot be in the future");
+        }
+
+        // validation: amount must be > 0
+        if (expense.getAmount() == null || expense.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than 0");
+        }
+
+        // optional: trim note length (ensure not longer than 20)
+        if (expense.getNote() != null && expense.getNote().length() > 20) {
+            expense.setNote(expense.getNote().substring(0, 20));
+        }
+
+        return repository.save(expense);
+    }
+
     public List<Expense> getAllExpenses() {
         return repository.findAll();
     }
