@@ -41,12 +41,6 @@
   "date" : "2025-12-01",
   "note" : "music classes"
 }, {
-  "id" : 10,
-  "category" : "Utilities",
-  "amount" : 50,
-  "date" : "2025-12-10",
-  "note" : "electricity"
-}, {
   "id" : 11,
   "category" : "Entertainment",
   "amount" : 19,
@@ -64,4 +58,10 @@
   "amount" : 10,
   "date" : "2025-12-04",
   "note" : "burger"
+}, {
+  "id" : 14,
+  "category" : "Utilities",
+  "amount" : 40,
+  "date" : "2025-12-10",
+  "note" : "electricity"
 } ]
