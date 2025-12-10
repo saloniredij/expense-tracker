@@ -39,11 +39,25 @@
             font-weight: 500;
         }
         .table-controls .form-select, .table-controls .form-check {
-            min-width: 160px;
+            min-width: 140px;
         }
         .cursor-pointer { cursor: pointer; }
         .chart-card { min-height: 260px; }
         .trend-list { max-height: 150px; overflow-y: auto; }
+        
+        /* Table column width and alignment */
+        .table th:nth-child(1) { width: 5%; text-align: center; }
+        .table td:nth-child(1) { width: 5%; text-align: center; }
+        .table th:nth-child(2) { width: 12%; }
+        .table td:nth-child(2) { width: 12%; }
+        .table th:nth-child(3) { width: 16%; }
+        .table td:nth-child(3) { width: 16%; }
+        .table th:nth-child(4) { width: 12%; text-align: right; }
+        .table td:nth-child(4) { width: 12%; text-align: right; }
+        .table th:nth-child(5) { width: 35%; }
+        .table td:nth-child(5) { width: 35%; }
+        .table th:nth-child(6) { width: 20%; text-align: center; }
+        .table td:nth-child(6) { width: 20%; text-align: center; }
     </style>
 </head>
 <body class="bg-light">
@@ -172,7 +186,7 @@
             </div>
 
             <!-- Charts (pie + line) -->
-            <div class="row g-3 mb-3">
+            <div class="row g-3 mb-5">
                 <div class="col-md-6">
                     <div class="card chart-card h-100">
                         <div class="card-body">
@@ -191,7 +205,7 @@
                 </div>
             </div>
 
-            <!-- Table controls (moved below charts) -->
+            <!-- Table controls (moved below charts with more space) -->
             <div class="row g-2 align-items-center table-controls mb-3">
                 <div class="col-auto">
                     <label class="form-label mb-1">Category</label>
@@ -218,18 +232,14 @@
                 </div>
 
                 <div class="col-auto">
-                    <label class="form-label mb-1">Show</label>
-                    <select id="page-size" class="form-select">
-                        <option value="10">10</option>
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                        <option value="0">All</option>
-                    </select>
+                    <label class="form-label mb-1">Search</label>
+                    <input id="quick-search" class="form-control" placeholder="category or note">
                 </div>
 
                 <div class="col-auto ms-auto">
-                    <label class="form-label mb-1">Search</label>
-                    <input id="quick-search" class="form-control" placeholder="category or note">
+                    <button class="btn btn-success" id="export-btn" title="Export to Excel">
+                        <i class="bi bi-download"></i> Export Excel
+                    </button>
                 </div>
             </div>
 
@@ -241,9 +251,9 @@
                         <th>#</th>
                         <th>Date</th>
                         <th>Category</th>
-                        <th class="text-end">Amount</th>
+                        <th>Amount</th>
                         <th>Note</th>
-                        <th class="text-center">Actions</th>
+                        <th>Actions</th>
                     </tr>
                     </thead>
                     <tbody id="expenses-table-body">
@@ -252,8 +262,18 @@
                 </table>
             </div>
 
-            <nav>
-                <ul class="pagination" id="pagination-ul"></ul>
+            <!-- Pagination row with Show dropdown aligned -->
+            <nav class="d-flex align-items-center justify-content-between">
+                <ul class="pagination mb-0" id="pagination-ul"></ul>
+                <div>
+                    <label class="form-label me-2 mb-0">Show</label>
+                    <select id="page-size" class="form-select d-inline-block" style="width: auto;">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="0">All</option>
+                    </select>
+                </div>
             </nav>
         </div>
     </div>
@@ -348,6 +368,7 @@
     const pageSizeSelect = document.getElementById('page-size');
     const quickSearch = document.getElementById('quick-search');
     const paginationUl = document.getElementById('pagination-ul');
+    const exportBtn = document.getElementById('export-btn');
 
     const rangeLast30 = document.getElementById('range-last30');
     const rangeCustom = document.getElementById('range-custom');
@@ -686,6 +707,31 @@
         } catch (err) {
             console.error(err);
             alert('Failed to save expense');
+        }
+    });
+
+    // Export to Excel handler
+    exportBtn.addEventListener('click', async () => {
+        try {
+            const response = await fetch(`${API_BASE}/export/excel`);
+            if (!response.ok) {
+                alert('Export failed');
+                return;
+            }
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = blob.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                ? `expenses_${new Date().toISOString().split('T')[0]}.xlsx` 
+                : 'expenses.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            console.error(err);
+            alert('Export failed');
         }
     });
 
