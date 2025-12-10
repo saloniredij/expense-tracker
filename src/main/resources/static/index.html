@@ -12,6 +12,11 @@
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
         crossorigin="anonymous"
     >
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
     <style>
         .input-group-text {
             background-color: #f8f9fa;
@@ -33,6 +38,12 @@
             color: #dc3545;
             font-weight: 500;
         }
+        .table-controls .form-select, .table-controls .form-check {
+            min-width: 160px;
+        }
+        .cursor-pointer { cursor: pointer; }
+        .chart-card { min-height: 260px; }
+        .trend-list { max-height: 150px; overflow-y: auto; }
     </style>
 </head>
 <body class="bg-light">
@@ -47,7 +58,14 @@
             <form id="expense-form" class="row g-3">
                 <div class="col-md-3">
                     <label for="category" class="form-label">Category</label>
-                    <input type="text" id="category" class="form-control" placeholder="Food, Travel, Rent..." required>
+                    <select id="category" class="form-select" required>
+                        <option value="">Select a category</option>
+                        <option value="Food">Food</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Travel">Travel</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Other">Other</option>
+                    </select>
                 </div>
                 <div class="col-md-3">
                     <label for="amount" class="form-label">Amount</label>
@@ -84,8 +102,8 @@
         </div>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="row g-3 mb-4">
+    <!-- Summary cards row -->
+    <div class="row g-3 mb-3">
         <div class="col-md-3">
             <div class="card text-bg-primary h-100">
                 <div class="card-body">
@@ -117,7 +135,7 @@
                 <div class="card-body">
                     <h6 class="card-title">Expense Trend</h6>
                     <small class="text-muted">Total per day (recent first)</small>
-                    <ul class="list-unstyled mt-2 mb-0" id="trend-list">
+                    <ul class="list-unstyled mt-2 mb-0 trend-list" id="trend-list">
                         <!-- Filled by JS -->
                     </ul>
                 </div>
@@ -125,21 +143,98 @@
         </div>
     </div>
 
-    <!-- Totals by Category -->
+    <!-- All Expenses + Charts -->
     <div class="card mb-4">
         <div class="card-body">
-            <h5 class="card-title">Total by Category</h5>
-            <ul class="list-group" id="category-totals">
-                <!-- Filled by JS -->
-            </ul>
-        </div>
-    </div>
+            <div class="d-flex mb-3 align-items-start">
+                <div>
+                    <h5 class="card-title mb-2">All Expenses</h5>
+                    <div class="small text-muted">Filter and browse your expenses</div>
+                </div>
 
-    <!-- All Expenses Table -->
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">All Expenses</h5>
-            <div class="table-responsive">
+                <!-- Chart controls (date range) -->
+                <div class="ms-auto text-end">
+                    <div class="mb-2">
+                        <div class="form-check form-check-inline">
+                          <input class="form-check-input" type="radio" name="rangeMode" id="range-last30" value="last30" checked>
+                          <label class="form-check-label" for="range-last30">Last 30 days</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                          <input class="form-check-input" type="radio" name="rangeMode" id="range-custom" value="custom">
+                          <label class="form-check-label" for="range-custom">Custom</label>
+                        </div>
+                    </div>
+                    <div id="custom-range-controls" class="d-none">
+                        <input type="date" id="chart-start" class="form-control form-control-sm mb-1">
+                        <input type="date" id="chart-end" class="form-control form-control-sm">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts (pie + line) -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <div class="card chart-card h-100">
+                        <div class="card-body">
+                            <h6 class="card-title">Total by Category</h6>
+                            <canvas id="categoryPie" style="max-height:280px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card chart-card h-100">
+                        <div class="card-body">
+                            <h6 class="card-title">Daily Spend (by day)</h6>
+                            <canvas id="trendLine" style="max-height:280px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table controls (moved below charts) -->
+            <div class="row g-2 align-items-center table-controls mb-3">
+                <div class="col-auto">
+                    <label class="form-label mb-1">Category</label>
+                    <select id="filter-category" class="form-select">
+                        <option value="">All</option>
+                    </select>
+                </div>
+
+                <div class="col-auto">
+                    <label class="form-label mb-1">Date</label>
+                    <select id="sort-date" class="form-select">
+                        <option value="desc">Newest first</option>
+                        <option value="asc">Oldest first</option>
+                    </select>
+                </div>
+
+                <div class="col-auto">
+                    <label class="form-label mb-1">Amount</label>
+                    <select id="sort-amount" class="form-select">
+                        <option value="">—</option>
+                        <option value="amount-desc">Highest first</option>
+                        <option value="amount-asc">Lowest first</option>
+                    </select>
+                </div>
+
+                <div class="col-auto">
+                    <label class="form-label mb-1">Show</label>
+                    <select id="page-size" class="form-select">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="0">All</option>
+                    </select>
+                </div>
+
+                <div class="col-auto ms-auto">
+                    <label class="form-label mb-1">Search</label>
+                    <input id="quick-search" class="form-control" placeholder="category or note">
+                </div>
+            </div>
+
+            <!-- All Expenses Table -->
+            <div class="table-responsive mb-2">
                 <table class="table table-striped align-middle">
                     <thead>
                     <tr>
@@ -148,7 +243,7 @@
                         <th>Category</th>
                         <th class="text-end">Amount</th>
                         <th>Note</th>
-                        <th class="text-center">Action</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                     </thead>
                     <tbody id="expenses-table-body">
@@ -156,8 +251,61 @@
                     </tbody>
                 </table>
             </div>
+
+            <nav>
+                <ul class="pagination" id="pagination-ul"></ul>
+            </nav>
         </div>
     </div>
+
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="edit-form" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Expense</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+            <input type="hidden" id="edit-id">
+            <div class="mb-3">
+                <label for="edit-category" class="form-label">Category</label>
+                <select id="edit-category" class="form-select" required>
+                    <option value="">Select a category</option>
+                    <option value="Food">Food</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Travel">Travel</option>
+                    <option value="Utilities">Utilities</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="edit-amount" class="form-label">Amount</label>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input type="number" step="0.01" min="0.01" id="edit-amount" class="form-control" required>
+                </div>
+                <small class="text-danger d-none" id="edit-amount-error">Amount must be greater than 0</small>
+            </div>
+            <div class="mb-3">
+                <label for="edit-date" class="form-label">Date</label>
+                <input type="date" id="edit-date" class="form-control" required>
+                <small class="text-danger d-none" id="edit-date-error">Future dates are not allowed</small>
+            </div>
+            <div class="mb-3">
+                <label for="edit-note" class="form-label">Note</label>
+                <textarea id="edit-note" class="form-control" maxlength="20" rows="2"></textarea>
+                <div class="char-count"><span id="edit-char-count">0</span>/20</div>
+            </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save changes</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- Bootstrap JS (optional, for components) -->
@@ -183,6 +331,52 @@
         return res.json();
     }
 
+    // state
+    let allExpenses = [];
+    let filteredSorted = [];
+    let currentPage = 1;
+    let pageSize = 10;
+
+    // charts
+    let pieChart = null;
+    let lineChart = null;
+
+    // DOM refs
+    const filterCategory = document.getElementById('filter-category');
+    const sortDate = document.getElementById('sort-date');
+    const sortAmount = document.getElementById('sort-amount');
+    const pageSizeSelect = document.getElementById('page-size');
+    const quickSearch = document.getElementById('quick-search');
+    const paginationUl = document.getElementById('pagination-ul');
+
+    const rangeLast30 = document.getElementById('range-last30');
+    const rangeCustom = document.getElementById('range-custom');
+    const customRangeControls = document.getElementById('custom-range-controls');
+    const chartStart = document.getElementById('chart-start');
+    const chartEnd = document.getElementById('chart-end');
+
+    // helper: format date as yyyy-mm-dd
+    function fmtDate(d) {
+        const dd = d.getDate().toString().padStart(2, '0');
+        const mm = (d.getMonth()+1).toString().padStart(2, '0');
+        return d.getFullYear() + '-' + mm + '-' + dd;
+    }
+
+    // helper: format date as mm/dd/yy for display
+    function fmtDisplayDate(dateStr) {
+        if (!dateStr) return '—';
+        const d = new Date(dateStr + 'T00:00:00');
+        const mm = (d.getMonth()+1).toString().padStart(2, '0');
+        const dd = d.getDate().toString().padStart(2, '0');
+        const yy = d.getFullYear().toString().slice(-2);
+        return mm + '/' + dd + '/' + yy;
+    }
+
+    function parseDateStr(s) {
+        if (!s) return null;
+        return new Date(s + 'T00:00:00');
+    }
+
     // load all data (expenses + summary)
     async function loadData() {
         try {
@@ -190,10 +384,71 @@
                 fetchJson(API_BASE),
                 fetchJson(API_BASE + '/summary')
             ]);
-            renderExpenses(expenses);
+            allExpenses = (expenses || []).map(e => {
+                return {...e, amount: Number(e.amount), category: e.category || '', note: e.note || ''};
+            });
+            populateCategoryFilter();
             renderSummary(summary);
+            applyFiltersAndRender();
+            initOrUpdateCharts();
         } catch (e) {
             console.error(e);
+        }
+    }
+
+    function populateCategoryFilter() {
+        const cats = Array.from(new Set(allExpenses.map(e => (e.category || '').toString().toLowerCase()).filter(Boolean)));
+        const prev = filterCategory.value || '';
+        filterCategory.innerHTML = '<option value="">All</option>';
+        cats.sort().forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c;
+            opt.textContent = c.charAt(0).toUpperCase() + c.slice(1);
+            filterCategory.appendChild(opt);
+        });
+        if (prev) filterCategory.value = prev;
+    }
+
+    function applyFiltersAndRender() {
+        // Filter
+        const catFilter = (filterCategory.value || '').toLowerCase();
+        const q = (quickSearch.value || '').toLowerCase().trim();
+
+        filteredSorted = allExpenses.filter(e => {
+            const catOk = !catFilter || (e.category || '').toLowerCase() === catFilter;
+            const qOk = !q || ( (e.category||'').toLowerCase().includes(q) || (e.note||'').toLowerCase().includes(q) );
+            return catOk && qOk;
+        });
+
+        // Date sort
+        const dateOrder = sortDate.value || 'desc';
+        filteredSorted.sort((a, b) => {
+            const da = new Date(a.date).getTime();
+            const db = new Date(b.date).getTime();
+            return dateOrder === 'asc' ? da - db : db - da;
+        });
+
+        // Amount sort (secondary)
+        const amtSort = sortAmount.value;
+        if (amtSort === 'amount-asc') {
+            filteredSorted.sort((a,b) => (Number(a.amount||0) - Number(b.amount||0)));
+        } else if (amtSort === 'amount-desc') {
+            filteredSorted.sort((a,b) => (Number(b.amount||0) - Number(a.amount||0)));
+        }
+
+        // pagination
+        pageSize = Number(pageSizeSelect.value);
+        if (pageSize === 0) {
+            currentPage = 1;
+            renderExpenses(filteredSorted);
+            renderPagination(1, 1);
+        } else {
+            const totalPages = Math.max(1, Math.ceil(filteredSorted.length / pageSize));
+            if (currentPage > totalPages) currentPage = totalPages;
+            const start = (currentPage - 1) * pageSize;
+            const pageItems = filteredSorted.slice(start, start + pageSize);
+            renderExpenses(pageItems);
+            renderPagination(totalPages, currentPage);
         }
     }
 
@@ -201,30 +456,117 @@
         const tbody = document.getElementById('expenses-table-body');
         tbody.innerHTML = '';
         expenses.forEach((exp, idx) => {
-            const tr = document.createElement('tr');
+            const globalIndex = (currentPage -1) * (pageSize || filteredSorted.length) + idx + 1;
             const amount = Number(exp.amount || 0);
+            const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${idx + 1}</td>
-                <td>${exp.date}</td>
-                <td>${exp.category}</td>
+                <td>${globalIndex}</td>
+                <td>${fmtDisplayDate(exp.date)}</td>
+                <td>${escapeHtml(exp.category || '')}</td>
                 <td class="text-end">$${amount.toFixed(2)}</td>
-                <td>${exp.note || '—'}</td>
+                <td>${escapeHtml(exp.note || '—')}</td>
                 <td class="text-center">
-                    <button class="btn btn-sm btn-outline-danger" data-id="${exp.id}">
-                        Delete
+                    <button class="btn btn-sm btn-outline-secondary me-1 edit-btn" data-id="${exp.id}" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${exp.id}" title="Delete">
+                        <i class="bi bi-trash"></i>
                     </button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
 
-        tbody.querySelectorAll('button[data-id]').forEach(btn => {
+        // Attach handlers
+        tbody.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const id = btn.getAttribute('data-id');
-                await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
-                loadData();
+                if (!confirm('Delete this expense?')) return;
+                try {
+                    await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+                    await loadData();
+                } catch (err) {
+                    console.error(err);
+                    alert('Delete failed');
+                }
             });
         });
+
+        tbody.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-id');
+                openEditModal(id);
+            });
+        });
+    }
+
+    function renderPagination(totalPages, activePage) {
+        paginationUl.innerHTML = '';
+        if (totalPages <= 1) return;
+
+        const createPageItem = (p, label = null, active = false, disabled = false) => {
+            const li = document.createElement('li');
+            li.className = 'page-item' + (active ? ' active' : '') + (disabled ? ' disabled' : '');
+            const a = document.createElement('a');
+            a.className = 'page-link cursor-pointer';
+            a.textContent = label || p;
+            a.addEventListener('click', () => {
+                if (disabled) return;
+                currentPage = p;
+                applyFiltersAndRender();
+            });
+            li.appendChild(a);
+            return li;
+        };
+
+        // prev
+        const prev = document.createElement('li');
+        prev.className = 'page-item' + (activePage <= 1 ? ' disabled' : '');
+        const prevLink = document.createElement('a');
+        prevLink.className = 'page-link cursor-pointer';
+        prevLink.textContent = 'Prev';
+        prevLink.addEventListener('click', () => {
+            if (activePage <= 1) return;
+            currentPage = activePage - 1;
+            applyFiltersAndRender();
+        });
+        prev.appendChild(prevLink);
+        paginationUl.appendChild(prev);
+
+        // pages (limit to reasonable range)
+        const windowSize = 5;
+        let start = Math.max(1, activePage - Math.floor(windowSize/2));
+        let end = Math.min(totalPages, start + windowSize - 1);
+        if (end - start < windowSize - 1) {
+            start = Math.max(1, end - windowSize + 1);
+        }
+
+        for (let p = start; p <= end; p++) {
+            paginationUl.appendChild(createPageItem(p, String(p), p === activePage));
+        }
+
+        // next
+        const next = document.createElement('li');
+        next.className = 'page-item' + (activePage >= totalPages ? ' disabled' : '');
+        const nextLink = document.createElement('a');
+        nextLink.className = 'page-link cursor-pointer';
+        nextLink.textContent = 'Next';
+        nextLink.addEventListener('click', () => {
+            if (activePage >= totalPages) return;
+            currentPage = activePage + 1;
+            applyFiltersAndRender();
+        });
+        next.appendChild(nextLink);
+        paginationUl.appendChild(next);
+    }
+
+    function escapeHtml(str) {
+        return String(str)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
     }
 
     function renderSummary(summary) {
@@ -241,35 +583,26 @@
         document.getElementById('lowest-category-amount').textContent =
             '$' + Number(summary.lowestCategory?.total || 0).toFixed(2);
 
-        // Totals by category
-        const ul = document.getElementById('category-totals');
-        ul.innerHTML = '';
-        Object.entries(summary.totalByCategory || {}).forEach(([cat, amt]) => {
-            const li = document.createElement('li');
-            li.className = 'list-group-item d-flex justify-content-between align-items-center';
-            li.innerHTML = `
-                <span>${cat}</span>
-                <span class="fw-semibold">$${Number(amt).toFixed(2)}</span>
-            `;
-            ul.appendChild(li);
-        });
-
-        // dailyTrend list of {date, total}
+        // Trend list for quick reference (max 4 items)
         const trendUl = document.getElementById('trend-list');
         trendUl.innerHTML = '';
-        (summary.dailyTrend || []).slice().reverse().forEach(point => {
+        const trendArray = (summary.dailyTrend || []).slice().reverse();
+        trendArray.slice(0, 4).forEach(point => {
             const li = document.createElement('li');
-            li.textContent = `${point.date}: $${Number(point.total).toFixed(2)}`;
+            li.textContent = `${fmtDisplayDate(point.date)}: $${Number(point.total).toFixed(2)}`;
             trendUl.appendChild(li);
         });
     }
 
-    // Set max date to today
+    // Set max date to today (for add and edit)
     const dateInput = document.getElementById('date');
-    const today = new Date().toISOString().split('T')[0];
-    dateInput.setAttribute('max', today);
+    const todayStr = new Date().toISOString().split('T')[0];
+    dateInput.setAttribute('max', todayStr);
 
-    // Character count for note field
+    const editDateInput = document.getElementById('edit-date');
+    editDateInput.setAttribute('max', todayStr);
+
+    // Character count for note fields
     const noteInput = document.getElementById('note');
     const charCountSpan = document.getElementById('char-count');
     noteInput.addEventListener('input', () => {
@@ -282,61 +615,60 @@
         }
     });
 
-    // Validation functions
-    function validateAmount() {
-        const amountInput = document.getElementById('amount');
-        const amountError = document.getElementById('amount-error');
-        const amount = parseFloat(amountInput.value);
+    const editNoteInput = document.getElementById('edit-note');
+    const editCharCountSpan = document.getElementById('edit-char-count');
+    editNoteInput.addEventListener('input', () => {
+        editCharCountSpan.textContent = editNoteInput.value.length;
+    });
 
+    // Validation helpers (for add and edit)
+    function validateAmountField(inputEl, errorEl) {
+        const amount = parseFloat(inputEl.value);
         if (amount <= 0 || isNaN(amount)) {
-            amountError.classList.remove('d-none');
-            amountInput.classList.add('is-invalid');
+            errorEl.classList.remove('d-none');
+            inputEl.classList.add('is-invalid');
             return false;
         } else {
-            amountError.classList.add('d-none');
-            amountInput.classList.remove('is-invalid');
+            errorEl.classList.add('d-none');
+            inputEl.classList.remove('is-invalid');
             return true;
         }
     }
 
-    function validateDate() {
-        const dateInput = document.getElementById('date');
-        const dateError = document.getElementById('date-error');
-        const selectedDate = new Date(dateInput.value);
+    function validateDateField(inputEl, errorEl) {
+        const selected = new Date(inputEl.value);
         const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        selectedDate.setHours(0, 0, 0, 0);
-
-        if (selectedDate > today) {
-            dateError.classList.remove('d-none');
-            dateInput.classList.add('is-invalid');
+        today.setHours(0,0,0,0);
+        selected.setHours(0,0,0,0);
+        if (selected > today) {
+            errorEl.classList.remove('d-none');
+            inputEl.classList.add('is-invalid');
             return false;
         } else {
-            dateError.classList.add('d-none');
-            dateInput.classList.remove('is-invalid');
+            errorEl.classList.add('d-none');
+            inputEl.classList.remove('is-invalid');
             return true;
         }
     }
 
-    // Real-time validation
-    document.getElementById('amount').addEventListener('blur', validateAmount);
-    document.getElementById('amount').addEventListener('change', validateAmount);
-    document.getElementById('date').addEventListener('change', validateDate);
+    // Real-time validation event hookups
+    document.getElementById('amount').addEventListener('blur', () => validateAmountField(document.getElementById('amount'), document.getElementById('amount-error')));
+    dateInput.addEventListener('change', () => validateDateField(dateInput, document.getElementById('date-error')));
 
-    // Handle add-expense form
+    // Add expense handler
     document.getElementById('expense-form').addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // Validate all fields
-        if (!validateAmount() || !validateDate()) {
+        if (!validateAmountField(document.getElementById('amount'), document.getElementById('amount-error'))
+            || !validateDateField(dateInput, document.getElementById('date-error'))) {
             alert('Please fix validation errors before submitting');
             return;
         }
 
         const category = document.getElementById('category').value.trim();
         const amount = document.getElementById('amount').value;
-        const date = document.getElementById('date').value;
-        const note = document.getElementById('note').value.trim();
+        const date = dateInput.value;
+        const note = noteInput.value.trim();
 
         if (!category || !amount || !date) return;
 
@@ -347,19 +679,264 @@
                 method: 'POST',
                 body: JSON.stringify(payload)
             });
-            // clear form + reload data
             e.target.reset();
             document.querySelector('.char-count').classList.remove('limit-reached');
             charCountSpan.textContent = '0';
-            loadData();
+            await loadData();
         } catch (err) {
             console.error(err);
             alert('Failed to save expense');
         }
     });
 
-    // Initial load
-    loadData();
+    // Filters/sorting event hookups
+    filterCategory.addEventListener('change', () => { currentPage = 1; applyFiltersAndRender(); });
+    sortDate.addEventListener('change', () => { currentPage = 1; applyFiltersAndRender(); });
+    sortAmount.addEventListener('change', () => { currentPage = 1; applyFiltersAndRender(); });
+    pageSizeSelect.addEventListener('change', () => { currentPage = 1; applyFiltersAndRender(); });
+    quickSearch.addEventListener('input', () => { currentPage = 1; applyFiltersAndRender(); });
+
+    // Chart range controls
+    rangeLast30.addEventListener('change', () => {
+        customRangeControls.classList.add('d-none');
+        initOrUpdateCharts();
+    });
+    rangeCustom.addEventListener('change', () => {
+        customRangeControls.classList.remove('d-none');
+        if (!chartStart.value || !chartEnd.value) {
+            const end = new Date();
+            const start = new Date();
+            start.setDate(end.getDate() - 29);
+            chartStart.value = fmtDate(start);
+            chartEnd.value = fmtDate(end);
+        }
+        initOrUpdateCharts();
+    });
+    chartStart.addEventListener('change', () => { initOrUpdateCharts(); });
+    chartEnd.addEventListener('change', () => { initOrUpdateCharts(); });
+
+    // Chart helper: get date range (inclusive)
+    function getChartRange() {
+        if (rangeCustom.checked) {
+            const s = parseDateStr(chartStart.value);
+            const e = parseDateStr(chartEnd.value);
+            if (!s || !e || s > e) {
+                const end = new Date();
+                const start = new Date();
+                start.setDate(end.getDate() - 29);
+                return {start, end};
+            }
+            return {start: s, end: e};
+        } else {
+            const end = new Date();
+            const start = new Date();
+            start.setDate(end.getDate() - 29);
+            return {start, end};
+        }
+    }
+
+    function daterangeArray(start, end) {
+        const arr = [];
+        const cur = new Date(start);
+        cur.setHours(0,0,0,0);
+        const e = new Date(end);
+        e.setHours(0,0,0,0);
+        while (cur <= e) {
+            arr.push(new Date(cur));
+            cur.setDate(cur.getDate() + 1);
+        }
+        return arr;
+    }
+
+    // Build aggregates from client-side data for a given range
+    function aggregatesForRange(start, end) {
+        const startTs = new Date(start); startTs.setHours(0,0,0,0);
+        const endTs = new Date(end); endTs.setHours(23,59,59,999);
+
+        const catTotals = {};
+        const dailyTotals = {};
+
+        allExpenses.forEach(e => {
+            const d = new Date(e.date + 'T00:00:00');
+            if (d >= startTs && d <= endTs) {
+                const cat = (e.category || 'Uncategorized').toString();
+                catTotals[cat] = (catTotals[cat] || 0) + Number(e.amount || 0);
+
+                const key = e.date;
+                dailyTotals[key] = (dailyTotals[key] || 0) + Number(e.amount || 0);
+            }
+        });
+
+        return {catTotals, dailyTotals};
+    }
+
+    // Initialize or update Chart.js charts
+    function initOrUpdateCharts() {
+        const {start, end} = getChartRange();
+        if (!rangeCustom.checked) {
+            chartStart.value = fmtDate(start);
+            chartEnd.value = fmtDate(end);
+        }
+        const {catTotals, dailyTotals} = aggregatesForRange(start, end);
+
+        const pieLabels = Object.keys(catTotals);
+        const pieData = pieLabels.map(k => catTotals[k]);
+
+        const days = daterangeArray(start, end).map(d => fmtDate(d));
+        const lineData = days.map(day => Number(dailyTotals[day] || 0));
+
+        // create / update pie
+        const pieCtx = document.getElementById('categoryPie').getContext('2d');
+        if (pieChart) {
+            pieChart.data.labels = pieLabels;
+            pieChart.data.datasets[0].data = pieData;
+            pieChart.update();
+        } else {
+            pieChart = new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: pieLabels,
+                    datasets: [{
+                        data: pieData,
+                        backgroundColor: pieLabels.map((_,i) => chartColor(i)),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const v = ctx.raw || 0;
+                                    return ctx.label + ': $' + Number(v).toFixed(2);
+                                }
+                            }
+                        },
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // create / update line
+        const lineCtx = document.getElementById('trendLine').getContext('2d');
+        if (lineChart) {
+            lineChart.data.labels = days;
+            lineChart.data.datasets[0].data = lineData;
+            lineChart.update();
+        } else {
+            lineChart = new Chart(lineCtx, {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [{
+                        label: 'Spend',
+                        data: lineData,
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13,110,253,0.08)',
+                        fill: true,
+                        tension: 0.2,
+                        pointRadius: 3
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: { display: true },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: (v) => '$' + Number(v).toFixed(0)
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const v = ctx.raw || 0;
+                                    return '$' + Number(v).toFixed(2);
+                                }
+                            }
+                        },
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+    }
+
+    // small palette helper
+    function chartColor(i) {
+        const palette = [
+            '#4dc9f6', '#f67019', '#f53794', '#537bc4',
+            '#acc236', '#166a8f', '#00a950', '#58595b',
+            '#8549ba', '#ff6384', '#36a2eb'
+        ];
+        return palette[i % palette.length];
+    }
+
+    // Edit modal open
+    const editModalEl = document.getElementById('editModal');
+    const editModal = new bootstrap.Modal(editModalEl);
+
+    function openEditModal(id) {
+        const exp = allExpenses.find(x => String(x.id) === String(id));
+        if (!exp) return;
+        document.getElementById('edit-id').value = exp.id;
+        document.getElementById('edit-category').value = exp.category || '';
+        document.getElementById('edit-amount').value = Number(exp.amount || 0).toFixed(2);
+        document.getElementById('edit-date').value = exp.date || '';
+        document.getElementById('edit-note').value = exp.note || '';
+        editCharCountSpan.textContent = (exp.note || '').length;
+        document.getElementById('edit-amount-error').classList.add('d-none');
+        document.getElementById('edit-amount').classList.remove('is-invalid');
+        document.getElementById('edit-date-error').classList.add('d-none');
+        document.getElementById('edit-date').classList.remove('is-invalid');
+        editModal.show();
+    }
+
+    // Edit form submit
+    document.getElementById('edit-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('edit-id').value;
+        const category = document.getElementById('edit-category').value.trim();
+        const amountEl = document.getElementById('edit-amount');
+        const dateEl = document.getElementById('edit-date');
+        const note = document.getElementById('edit-note').value.trim();
+
+        if (!validateAmountField(amountEl, document.getElementById('edit-amount-error'))
+            || !validateDateField(dateEl, document.getElementById('edit-date-error'))) {
+            alert('Please fix validation errors before saving');
+            return;
+        }
+
+        const payload = { category, amount: Number(amountEl.value), date: dateEl.value, note: note || null };
+
+        try {
+            await fetchJson(`${API_BASE}/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            });
+            editModal.hide();
+            await loadData();
+        } catch (err) {
+            console.error(err);
+            alert('Update failed');
+        }
+    });
+
+    // helpers: attach change handlers for charts when relevant, also init default range
+    document.addEventListener('DOMContentLoaded', () => {
+        rangeLast30.checked = true;
+        const end = new Date();
+        const start = new Date();
+        start.setDate(end.getDate() - 29);
+        chartStart.value = fmtDate(start);
+        chartEnd.value = fmtDate(end);
+
+        loadData();
+    });
+
 </script>
 </body>
 </html>
