@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Expense Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap 5 CSS (CDN) -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+        crossorigin="anonymous"
+    >
+</head>
+<body class="bg-light">
+
+<div class="container py-4">
+    <h1 class="mb-4">Expense Tracker</h1>
+
+    <!-- Add Expense Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Add Expense</h5>
+            <form id="expense-form" class="row g-3">
+                <div class="col-md-4">
+                    <label for="category" class="form-label">Category</label>
+                    <input type="text" id="category" class="form-control" placeholder="Food, Travel, Rent..." required>
+                </div>
+                <div class="col-md-4">
+                    <label for="amount" class="form-label">Amount</label>
+                    <input type="number" step="0.01" min="0" id="amount" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                    <label for="date" class="form-label">Date</label>
+                    <input type="date" id="date" class="form-control" required>
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-primary" type="submit">Add Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card text-bg-primary h-100">
+                <div class="card-body">
+                    <h6 class="card-title">Total Expense</h6>
+                    <p class="fs-4 mb-0" id="total-expense">$0.00</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-success h-100">
+                <div class="card-body">
+                    <h6 class="card-title">Highest Spend Category</h6>
+                    <p class="fs-6 mb-1" id="highest-category-name">—</p>
+                    <p class="mb-0" id="highest-category-amount">$0.00</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-warning h-100">
+                <div class="card-body">
+                    <h6 class="card-title">Lowest Spend Category</h6>
+                    <p class="fs-6 mb-1" id="lowest-category-name">—</p>
+                    <p class="mb-0" id="lowest-category-amount">$0.00</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-light h-100">
+                <div class="card-body">
+                    <h6 class="card-title">Expense Trend</h6>
+                    <small class="text-muted">Total per day (recent first)</small>
+                    <ul class="list-unstyled mt-2 mb-0" id="trend-list">
+                        <!-- Filled by JS -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Totals by Category -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Total by Category</h5>
+            <ul class="list-group" id="category-totals">
+                <!-- Filled by JS -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- All Expenses Table -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">All Expenses</h5>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                    </thead>
+                    <tbody id="expenses-table-body">
+                    <!-- Filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS (optional, for components) -->
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"
+></script>
+
+<script>
+    // connect to Spring Boot REST API
+    const API_BASE = '/api/expenses';
+
+    async function fetchJson(url, options = {}) {
+        const res = await fetch(url, {
+            headers: { 'Content-Type': 'application/json' },
+            ...options
+        });
+        if (!res.ok) {
+            console.error('Request failed:', res.status, res.statusText);
+            throw new Error('Request failed');
+        }
+        return res.json();
+    }
+
+    // load all data (expenses + summary)
+    async function loadData() {
+        try {
+            const [expenses, summary] = await Promise.all([
+                fetchJson(API_BASE),
+                fetchJson(API_BASE + '/summary')
+            ]);
+            renderExpenses(expenses);
+            renderSummary(summary);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function renderExpenses(expenses) {
+        const tbody = document.getElementById('expenses-table-body');
+        tbody.innerHTML = '';
+        expenses.forEach((exp, idx) => {
+            const tr = document.createElement('tr');
+            const amount = Number(exp.amount || 0);
+            tr.innerHTML = `
+                <td>${idx + 1}</td>
+                <td>${exp.date}</td>
+                <td>${exp.category}</td>
+                <td class="text-end">$${amount.toFixed(2)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderSummary(summary) {
+        document.getElementById('total-expense').textContent =
+            '$' + Number(summary.totalExpense || 0).toFixed(2);
+
+        
+        document.getElementById('highest-category-name').textContent =
+            summary.highestCategory?.category || '—';
+        document.getElementById('highest-category-amount').textContent =
+            '$' + Number(summary.highestCategory?.total || 0).toFixed(2);
+
+        document.getElementById('lowest-category-name').textContent =
+            summary.lowestCategory?.category || '—';
+        document.getElementById('lowest-category-amount').textContent =
+            '$' + Number(summary.lowestCategory?.total || 0).toFixed(2);
+
+        // Totals by category
+        const ul = document.getElementById('category-totals');
+        ul.innerHTML = '';
+        Object.entries(summary.totalByCategory || {}).forEach(([cat, amt]) => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+            li.innerHTML = `
+                <span>${cat}</span>
+                <span class="fw-semibold">$${Number(amt).toFixed(2)}</span>
+            `;
+            ul.appendChild(li);
+        });
+
+        // dailyTrend list of {date, total}
+        const trendUl = document.getElementById('trend-list');
+        trendUl.innerHTML = '';
+        (summary.dailyTrend || []).slice().reverse().forEach(point => {
+            const li = document.createElement('li');
+            li.textContent = `${point.date}: $${Number(point.total).toFixed(2)}`;
+            trendUl.appendChild(li);
+        });
+    }
+
+    // Handle add-expense form
+    document.getElementById('expense-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const category = document.getElementById('category').value.trim();
+        const amount = document.getElementById('amount').value;
+        const date = document.getElementById('date').value;
+
+        if (!category || !amount || !date) return;
+
+        const payload = { category, amount: Number(amount), date };
+
+        try {
+            await fetchJson(API_BASE, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            // clear form + reload data
+            e.target.reset();
+            loadData();
+        } catch (err) {
+            console.error(err);
+            alert('Failed to save expense');
+        }
+    });
+
+    // Initial load
+    loadData();
+</script>
+</body>
+</html>
