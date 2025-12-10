@@ -1,7 +1,8 @@
 # Expense Tracker Application
 
-**Hosted Application URL**: https://expense-tracker-3pzv.onrender.com/
-**Disclaimer**:  Application is setup to run with seed data on startup
+**Presentation URL**: https://docs.google.com/presentation/d/1HGkOTeZ8ssMHM05R7zHwONliJYOdZfJ693VjlmuNRGQ/edit?usp=sharing
+-**Hosted Application URL**: https://expense-tracker-3pzv.onrender.com/
+-**Disclaimer**:  Application is setup to run with seed data on startup
 
 A **Spring Boot–based Expense Tracker** that allows users to record, manage, analyze, and export personal expenses.  
 The application follows clean backend design principles, includes **file-based persistence (no database)**, and is fully tested using **JUnit 5, Mockito, and Spring Boot Test**.
