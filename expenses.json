@@ -1,7 +1,7 @@
 [ {
   "id" : 1,
   "category" : "Food",
-  "amount" : 12.50,
+  "amount" : 18,
   "date" : "2025-12-07",
   "note" : "Lunch"
 }, {
@@ -12,10 +12,10 @@
   "note" : "Monthly rent"
 }, {
   "id" : 4,
-  "category" : "Movies",
+  "category" : "Entertainment",
   "amount" : 35,
   "date" : "2025-12-03",
-  "note" : null
+  "note" : "Movies"
 }, {
   "id" : 5,
   "category" : "Food",
@@ -23,15 +23,45 @@
   "date" : "2025-10-07",
   "note" : null
 }, {
-  "id" : 6,
-  "category" : "Travel",
-  "amount" : 300,
-  "date" : "2025-12-26",
-  "note" : null
-}, {
   "id" : 7,
   "category" : "Travel",
   "amount" : 400,
   "date" : "2025-12-04",
   "note" : null
+}, {
+  "id" : 8,
+  "category" : "Travel",
+  "amount" : 15,
+  "date" : "2025-12-07",
+  "note" : "metro"
+}, {
+  "id" : 9,
+  "category" : "Other",
+  "amount" : 200,
+  "date" : "2025-12-01",
+  "note" : "music classes"
+}, {
+  "id" : 10,
+  "category" : "Utilities",
+  "amount" : 50,
+  "date" : "2025-12-10",
+  "note" : "electricity"
+}, {
+  "id" : 11,
+  "category" : "Entertainment",
+  "amount" : 19,
+  "date" : "2025-11-04",
+  "note" : "netflix"
+}, {
+  "id" : 12,
+  "category" : "Food",
+  "amount" : 2,
+  "date" : "2025-12-04",
+  "note" : "coffee"
+}, {
+  "id" : 13,
+  "category" : "Food",
+  "amount" : 10,
+  "date" : "2025-12-04",
+  "note" : "burger"
 } ]
