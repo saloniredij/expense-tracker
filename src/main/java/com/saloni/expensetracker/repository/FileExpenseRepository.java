@@ -22,16 +22,10 @@ public class FileExpenseRepository implements ExpenseRepository {
 
     private final ObjectMapper objectMapper;
 
-    public FileExpenseRepository(ObjectMapper objectMapper,
-                                @Value("${expense.file.path:expenses.json}") String expenseFilePath) {
+    public FileExpenseRepository(ObjectMapper objectMapper, @Value("${expense.file.path:expenses.json}") String expenseFilePath) {
         this.objectMapper = objectMapper;
         this.filePath = Paths.get(expenseFilePath);
-        System.out.println("Loading expenses from: " + filePath.toAbsolutePath());
-        loadFromFile();
-    }
-                               @Value("${expense.file.path:expenses.json}") String expenseFilePath) {
-        this.objectMapper = objectMapper;
-        this.filePath = Paths.get(expenseFilePath);
+        System.out.println("[ExpenseRepo] Loading expenses from: " + filePath.toAbsolutePath());
         loadFromFile();
     }
 
@@ -51,31 +45,43 @@ public class FileExpenseRepository implements ExpenseRepository {
                 throw new RuntimeException("Failed to load expenses from file", e);
             }
         } else {
-            // OPTIONAL: preload demo data into the file the first time
-            expenses.add(new Expense(0, "Food",
-                    new BigDecimal("12.50"), LocalDate.now().minusDays(2), "Lunch"));
-            expenses.add(new Expense(0, "Travel",
-                    new BigDecimal("3.20"), LocalDate.now().minusDays(1), "Bus"));
-            expenses.add(new Expense(0, "Utilities",
-                    new BigDecimal("500.00"), LocalDate.now().minusDays(10), "Monthly rent"));
-
-            for (Expense e : expenses) {
-                e.setId(nextId++);
-            }
-            saveToFile();
+            // Preload demo data into the file the first time
+            initializeDemoData();
         }
     }
 
-    private synchronized void saveToFile() {
-        try (Writer writer = Files.newBufferedWriter(filePath,
+    private void initializeDemoData() {
+        expenses.add(new Expense(0, "Food",
+                new BigDecimal("12.50"), LocalDate.now().minusDays(2), "Lunch"));
+        expenses.add(new Expense(0, "Travel",
+                new BigDecimal("3.20"), LocalDate.now().minusDays(1), "Bus"));
+        expenses.add(new Expense(0, "Utilities",
+                new BigDecimal("500.00"), LocalDate.now().minusDays(10), "Monthly rent"));
+
+        for (Expense e : expenses) {
+            e.setId(nextId++);
+        }
+        saveToFile();
+    }
+
+   private synchronized void saveToFile() {
+    try {
+        Path parent = filePath.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+
+        try (Writer writer = Files.newBufferedWriter(
+                filePath,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.TRUNCATE_EXISTING)) {
             objectMapper.writerWithDefaultPrettyPrinter()
                         .writeValue(writer, expenses);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to save expenses to file", e);
         }
+    } catch (IOException e) {
+        throw new RuntimeException("Failed to save expenses to file", e);
     }
+}
 
     @Override
     public synchronized Expense save(Expense expense) {
@@ -84,7 +90,7 @@ public class FileExpenseRepository implements ExpenseRepository {
             expense.setId(nextId++);
             expenses.add(expense);
         } else {
-            // update existing if needed (not strictly used yet)
+            // update existing if needed
             boolean updated = false;
             for (int i = 0; i < expenses.size(); i++) {
                 if (expenses.get(i).getId() == expense.getId()) {

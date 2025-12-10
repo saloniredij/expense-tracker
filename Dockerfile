@@ -9,7 +9,7 @@ RUN ./gradlew bootJar --no-daemon
 # ---------- RUN STAGE ----------
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-
+ENV EXPENSE_FILE_PATH=/app/expenses.json
 # Copy the built jar
 COPY --from=build /app/build/libs/*.jar app.jar
 
