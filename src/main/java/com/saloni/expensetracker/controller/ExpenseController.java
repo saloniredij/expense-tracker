@@ -18,7 +18,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/expenses")
-@CrossOrigin(origins = "*")  // for React 
+@CrossOrigin(origins = "*")  
 public class ExpenseController {
 
     private final ExpenseService service;
