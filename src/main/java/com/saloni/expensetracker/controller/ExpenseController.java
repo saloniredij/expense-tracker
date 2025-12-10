@@ -35,4 +35,9 @@ public class ExpenseController {
     public ExpenseSummary getSummary() {
         return service.getSummary();
     }
+
+    @DeleteMapping("/{id}")
+    public void deleteExpense(@PathVariable long id) {
+        service.deleteExpense(id);
+    }
 }

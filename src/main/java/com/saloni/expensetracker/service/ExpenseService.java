@@ -22,7 +22,7 @@ public class ExpenseService {
     }
 
     public Expense addExpense(Expense expense) {
-        // default date = today if not provided
+        // default date = current
         if (expense.getDate() == null) {
             expense.setDate(LocalDate.now());
         }
@@ -89,5 +89,9 @@ public class ExpenseService {
         CategoryTotal highest = getHighestCategory();
         CategoryTotal lowest = getLowestCategory();
         return new ExpenseSummary(total, byCategory, trend, highest, lowest);
+    }
+
+    public void deleteExpense(long id) {
+        repository.deleteById(id);
     }
 }
