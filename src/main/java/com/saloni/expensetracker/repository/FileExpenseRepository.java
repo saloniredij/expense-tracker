@@ -22,7 +22,13 @@ public class FileExpenseRepository implements ExpenseRepository {
 
     private final ObjectMapper objectMapper;
 
-    public FileExpenseRepository(ObjectMapper objectMapper, 
+    public FileExpenseRepository(ObjectMapper objectMapper,
+                                @Value("${expense.file.path:expenses.json}") String expenseFilePath) {
+        this.objectMapper = objectMapper;
+        this.filePath = Paths.get(expenseFilePath);
+        System.out.println("Loading expenses from: " + filePath.toAbsolutePath());
+        loadFromFile();
+    }
                                @Value("${expense.file.path:expenses.json}") String expenseFilePath) {
         this.objectMapper = objectMapper;
         this.filePath = Paths.get(expenseFilePath);
