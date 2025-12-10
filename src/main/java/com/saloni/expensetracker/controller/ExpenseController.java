@@ -18,7 +18,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/expenses")
-@CrossOrigin(origins = "http://localhost:5173")  // for React 
+@CrossOrigin(origins = "*")  // for React 
 public class ExpenseController {
 
     private final ExpenseService service;
