@@ -12,6 +12,28 @@
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
         crossorigin="anonymous"
     >
+    <style>
+        .input-group-text {
+            background-color: #f8f9fa;
+            border-right: 0;
+        }
+        .input-group .form-control {
+            border-left: 0;
+        }
+        .input-group .form-control:focus {
+            border-left: 0;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        .char-count {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
+        .char-count.limit-reached {
+            color: #dc3545;
+            font-weight: 500;
+        }
+    </style>
 </head>
 <body class="bg-light">
 
@@ -23,20 +45,40 @@
         <div class="card-body">
             <h5 class="card-title">Add Expense</h5>
             <form id="expense-form" class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="category" class="form-label">Category</label>
                     <input type="text" id="category" class="form-control" placeholder="Food, Travel, Rent..." required>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="amount" class="form-label">Amount</label>
-                    <input type="number" step="0.01" min="0" id="amount" class="form-control" required>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input 
+                            type="number" 
+                            step="0.01" 
+                            min="0.01" 
+                            id="amount" 
+                            class="form-control" 
+                            placeholder="0.00"
+                            required
+                        >
+                    </div>
+                    <small class="text-danger d-none" id="amount-error">Amount must be greater than 0</small>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="date" class="form-label">Date</label>
                     <input type="date" id="date" class="form-control" required>
+                    <small class="text-danger d-none" id="date-error">Future dates are not allowed</small>
+                </div>
+                <div class="col-md-3">
+                    <label for="note" class="form-label">Note</label>
+                    <textarea id="note" class="form-control" placeholder="optional" maxlength="20" rows="1"></textarea>
+                    <div class="char-count">
+                        <span id="char-count">0</span>/20
+                    </div>
                 </div>
                 <div class="col-12">
-                    <button class="btn btn-primary" type="submit">Add Expense</button>
+                    <button class="btn btn-primary" type="submit" id="submit-btn">Add Expense</button>
                 </div>
             </form>
         </div>
@@ -105,6 +147,8 @@
                         <th>Date</th>
                         <th>Category</th>
                         <th class="text-end">Amount</th>
+                        <th>Note</th>
+                        <th class="text-center">Action</th>
                     </tr>
                     </thead>
                     <tbody id="expenses-table-body">
@@ -164,8 +208,22 @@
                 <td>${exp.date}</td>
                 <td>${exp.category}</td>
                 <td class="text-end">$${amount.toFixed(2)}</td>
+                <td>${exp.note || '—'}</td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-danger" data-id="${exp.id}">
+                        Delete
+                    </button>
+                </td>
             `;
             tbody.appendChild(tr);
+        });
+
+        tbody.querySelectorAll('button[data-id]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.getAttribute('data-id');
+                await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+                loadData();
+            });
         });
     }
 
@@ -173,7 +231,6 @@
         document.getElementById('total-expense').textContent =
             '$' + Number(summary.totalExpense || 0).toFixed(2);
 
-        
         document.getElementById('highest-category-name').textContent =
             summary.highestCategory?.category || '—';
         document.getElementById('highest-category-amount').textContent =
@@ -207,16 +264,83 @@
         });
     }
 
+    // Set max date to today
+    const dateInput = document.getElementById('date');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.setAttribute('max', today);
+
+    // Character count for note field
+    const noteInput = document.getElementById('note');
+    const charCountSpan = document.getElementById('char-count');
+    noteInput.addEventListener('input', () => {
+        charCountSpan.textContent = noteInput.value.length;
+        const charCountDiv = document.querySelector('.char-count');
+        if (noteInput.value.length === 20) {
+            charCountDiv.classList.add('limit-reached');
+        } else {
+            charCountDiv.classList.remove('limit-reached');
+        }
+    });
+
+    // Validation functions
+    function validateAmount() {
+        const amountInput = document.getElementById('amount');
+        const amountError = document.getElementById('amount-error');
+        const amount = parseFloat(amountInput.value);
+
+        if (amount <= 0 || isNaN(amount)) {
+            amountError.classList.remove('d-none');
+            amountInput.classList.add('is-invalid');
+            return false;
+        } else {
+            amountError.classList.add('d-none');
+            amountInput.classList.remove('is-invalid');
+            return true;
+        }
+    }
+
+    function validateDate() {
+        const dateInput = document.getElementById('date');
+        const dateError = document.getElementById('date-error');
+        const selectedDate = new Date(dateInput.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        selectedDate.setHours(0, 0, 0, 0);
+
+        if (selectedDate > today) {
+            dateError.classList.remove('d-none');
+            dateInput.classList.add('is-invalid');
+            return false;
+        } else {
+            dateError.classList.add('d-none');
+            dateInput.classList.remove('is-invalid');
+            return true;
+        }
+    }
+
+    // Real-time validation
+    document.getElementById('amount').addEventListener('blur', validateAmount);
+    document.getElementById('amount').addEventListener('change', validateAmount);
+    document.getElementById('date').addEventListener('change', validateDate);
+
     // Handle add-expense form
     document.getElementById('expense-form').addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        // Validate all fields
+        if (!validateAmount() || !validateDate()) {
+            alert('Please fix validation errors before submitting');
+            return;
+        }
+
         const category = document.getElementById('category').value.trim();
         const amount = document.getElementById('amount').value;
         const date = document.getElementById('date').value;
+        const note = document.getElementById('note').value.trim();
 
         if (!category || !amount || !date) return;
 
-        const payload = { category, amount: Number(amount), date };
+        const payload = { category, amount: Number(amount), date, note: note || null };
 
         try {
             await fetchJson(API_BASE, {
@@ -225,6 +349,8 @@
             });
             // clear form + reload data
             e.target.reset();
+            document.querySelector('.char-count').classList.remove('limit-reached');
+            charCountSpan.textContent = '0';
             loadData();
         } catch (err) {
             console.error(err);
