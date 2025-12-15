@@ -1,16 +1,19 @@
 package com.saloni.expensetracker.service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
 import com.saloni.expensetracker.dto.CategoryTotal;
 import com.saloni.expensetracker.dto.DailyTotal;
 import com.saloni.expensetracker.dto.ExpenseSummary;
 import com.saloni.expensetracker.model.Expense;
 import com.saloni.expensetracker.repository.ExpenseRepository;
-import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class ExpenseService {
@@ -46,7 +49,7 @@ public class ExpenseService {
             throw new IllegalArgumentException("Amount must be greater than 0");
         }
 
-        // optional: trim note length (ensure not longer than 20)
+        // trim note length (ensure not longer than 20)
         if (expense.getNote() != null && expense.getNote().length() > 20) {
             expense.setNote(expense.getNote().substring(0, 20));
         }
